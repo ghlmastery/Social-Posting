@@ -1,0 +1,52 @@
+name: Drive video ingest
+
+on:
+  schedule:
+    # Every 20 minutes. GitHub Actions cron is best-effort and can lag
+    # during high load — this is fine for a posting queue, not for anything
+    # second-precision.
+    - cron: "*/20 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: drive-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run ingest job
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          GHL_API_TOKEN: ${{ secrets.GHL_API_TOKEN }}
+          GHL_LOCATION_ID: ${{ secrets.GHL_LOCATION_ID }}
+          GHL_FACEBOOK_ACCOUNT_ID: ${{ secrets.GHL_FACEBOOK_ACCOUNT_ID }}
+          GHL_INSTAGRAM_ACCOUNT_ID: ${{ secrets.GHL_INSTAGRAM_ACCOUNT_ID }}
+          GHL_YOUTUBE_ACCOUNT_ID: ${{ secrets.GHL_YOUTUBE_ACCOUNT_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 }}
+          GOOGLE_DRIVE_INBOX_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_INBOX_FOLDER_ID }}
+          GOOGLE_DRIVE_ARCHIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_ARCHIVE_FOLDER_ID }}
+          POSTING_TIMEZONE: ${{ vars.POSTING_TIMEZONE }}
+          POSTING_SLOT_TIMES: ${{ vars.POSTING_SLOT_TIMES }}
+          STATE_FILE_PATH: ./data/state.json
+          DRY_RUN: ${{ vars.DRY_RUN }}
+        run: npm run job:ingest
+
+      - name: Persist state
+        run: |
+          git config user.name "social-posting-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/state.json
+          git diff --cached --quiet || git commit -m "chore: update state after drive ingest run [skip ci]"
+          git push

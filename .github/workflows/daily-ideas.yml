@@ -1,0 +1,46 @@
+name: Daily content ideas
+
+on:
+  schedule:
+    # 11:00 UTC ~= 07:00 America/Toronto (EDT, UTC-4). Adjust for your
+    # timezone/DST, or just trigger manually — see docs/SETUP.md.
+    - cron: "0 11 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: daily-ideas
+  cancel-in-progress: false
+
+jobs:
+  ideas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run daily ideas job
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          GOOGLE_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 }}
+          GOOGLE_DRIVE_OUTPUT_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_OUTPUT_FOLDER_ID }}
+          CONTENT_FRAMEWORK_DOC_ID: ${{ vars.CONTENT_FRAMEWORK_DOC_ID }}
+          STATE_FILE_PATH: ./data/state.json
+        run: npm run job:ideas
+
+      - name: Persist state
+        # Generated markdown in output/ is written to Google Drive (when
+        # GOOGLE_DRIVE_OUTPUT_FOLDER_ID is set) rather than committed here —
+        # only the dedupe/history state needs to live in the repo.
+        run: |
+          git config user.name "social-posting-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/state.json
+          git diff --cached --quiet || git commit -m "chore: daily content ideas [skip ci]"
+          git push

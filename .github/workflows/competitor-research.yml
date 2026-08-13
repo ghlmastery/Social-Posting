@@ -1,0 +1,47 @@
+name: Weekly competitor research
+
+on:
+  schedule:
+    # 10:00 UTC every Monday ~= 06:00 America/Toronto (EDT).
+    - cron: "0 10 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: competitor-research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run competitor research job
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          COMPETITOR_NICHE_KEYWORDS: ${{ vars.COMPETITOR_NICHE_KEYWORDS }}
+          COMPETITOR_YOUTUBE_CHANNELS: ${{ vars.COMPETITOR_YOUTUBE_CHANNELS }}
+          GOOGLE_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 }}
+          GOOGLE_DRIVE_OUTPUT_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_OUTPUT_FOLDER_ID }}
+          STATE_FILE_PATH: ./data/state.json
+        run: npm run job:research
+
+      - name: Persist state
+        # Generated markdown in output/ is written to Google Drive (when
+        # GOOGLE_DRIVE_OUTPUT_FOLDER_ID is set) rather than committed here —
+        # only the dedupe/history state needs to live in the repo.
+        run: |
+          git config user.name "social-posting-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/state.json
+          git diff --cached --quiet || git commit -m "chore: weekly competitor research [skip ci]"
+          git push

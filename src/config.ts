@@ -1,0 +1,74 @@
+import "dotenv/config";
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function optional(name: string, fallback = ""): string {
+  return process.env[name] ?? fallback;
+}
+
+function csv(name: string): string[] {
+  return optional(name)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export const config = {
+  anthropic: {
+    apiKey: optional("ANTHROPIC_API_KEY"),
+    model: optional("ANTHROPIC_MODEL", "claude-sonnet-5"),
+  },
+  ghl: {
+    apiToken: optional("GHL_API_TOKEN"),
+    locationId: optional("GHL_LOCATION_ID"),
+    baseUrl: optional("GHL_API_BASE_URL", "https://services.leadconnectorhq.com"),
+    apiVersion: optional("GHL_API_VERSION", "2021-07-28"),
+    accounts: {
+      facebook: optional("GHL_FACEBOOK_ACCOUNT_ID"),
+      instagram: optional("GHL_INSTAGRAM_ACCOUNT_ID"),
+      youtube: optional("GHL_YOUTUBE_ACCOUNT_ID"),
+    },
+  },
+  google: {
+    serviceAccountJsonBase64: optional("GOOGLE_SERVICE_ACCOUNT_JSON_BASE64"),
+    inboxFolderId: optional("GOOGLE_DRIVE_INBOX_FOLDER_ID"),
+    archiveFolderId: optional("GOOGLE_DRIVE_ARCHIVE_FOLDER_ID"),
+    outputFolderId: optional("GOOGLE_DRIVE_OUTPUT_FOLDER_ID"),
+    frameworkDocId: optional(
+      "CONTENT_FRAMEWORK_DOC_ID",
+      "1asmHwaH9GraMqpYWlR5BdNngAty13OU5koiZktMj8kM"
+    ),
+  },
+  youtube: {
+    apiKey: optional("YOUTUBE_API_KEY"),
+    nicheKeywords: csv("COMPETITOR_NICHE_KEYWORDS").length
+      ? csv("COMPETITOR_NICHE_KEYWORDS")
+      : [
+          "GoHighLevel",
+          "GoHighLevel tutorial",
+          "business coaching",
+          "business consulting",
+          "SaaS agency coaching",
+          "marketing agency owner",
+        ],
+    competitorChannels: csv("COMPETITOR_YOUTUBE_CHANNELS"),
+  },
+  posting: {
+    timezone: optional("POSTING_TIMEZONE", "America/Toronto"),
+    slotTimes: csv("POSTING_SLOT_TIMES").length
+      ? csv("POSTING_SLOT_TIMES")
+      : ["09:00", "13:00", "17:00"],
+  },
+  state: {
+    filePath: optional("STATE_FILE_PATH", "./data/state.json"),
+  },
+  dryRun: optional("DRY_RUN", "true").toLowerCase() !== "false",
+};
+
+export { required };

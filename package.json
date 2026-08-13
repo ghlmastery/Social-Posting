@@ -1,0 +1,31 @@
+{
+  "name": "social-posting-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automated social media engine: Drive video ingestion -> multi-platform scheduling via HighLevel Social Planner, daily content ideas, and competitor research/script rewriting.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "job:ingest": "tsx src/jobs/runDriveIngestJob.ts",
+    "job:ideas": "tsx src/jobs/runDailyIdeasJob.ts",
+    "job:research": "tsx src/jobs/runCompetitorResearchJob.ts",
+    "verify:connections": "tsx src/jobs/verifyConnections.ts",
+    "scheduler": "tsx src/scheduler/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

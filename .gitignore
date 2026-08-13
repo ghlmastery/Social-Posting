@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+*.log
+
+# data/state.json IS tracked on purpose: it holds processed-file/idea/
+# competitor history, and the GitHub Actions workflows commit it back to the
+# repo after each run so state survives across ephemeral runners. See
+# docs/SETUP.md. Only ignore ad-hoc local output, not the committed one.
+output/
+
+# Google service account key, if placed locally instead of an env var
+service-account.json
