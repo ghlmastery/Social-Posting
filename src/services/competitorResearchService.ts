@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { config } from "../config.js";
-import { generateJson, generateText } from "../lib/anthropic.js";
+import { generateStructured, generateText } from "../lib/anthropic.js";
 import { createTextFileInFolder } from "../lib/googleDrive.js";
 import { searchAllNicheKeywords } from "../lib/youtube.js";
 import type { CompetitorScriptPackage, CompetitorVideo, EngineState } from "../types.js";
@@ -20,6 +20,17 @@ interface ScriptResponse {
   suggestedHook: string;
   suggestedCta: string;
 }
+
+const SCRIPT_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    whyItWorks: { type: "string" },
+    uniqueScript: { type: "string" },
+    suggestedHook: { type: "string" },
+    suggestedCta: { type: "string" },
+  },
+  required: ["whyItWorks", "uniqueScript", "suggestedHook", "suggestedCta"],
+};
 
 export interface CompetitorResearchResult {
   topVideos: CompetitorVideo[];
@@ -46,9 +57,6 @@ export async function runCompetitorResearch(
 - Views: ${video.viewCount} (${video.viewsPerDay}/day)
 - Description: "${video.description.slice(0, 800)}"
 
-Return JSON exactly as:
-{ "whyItWorks": string, "uniqueScript": string, "suggestedHook": string, "suggestedCta": string }
-
 - whyItWorks: 2-4 sentences analyzing the likely hook/structure/promise pattern from the title+description.
 - uniqueScript: a full ~45-90 second video script (hook, body, CTA) in OUR brand voice
   (direct, practical, agency-owner-to-agency-owner) inspired by that pattern but with
@@ -56,7 +64,12 @@ Return JSON exactly as:
 - suggestedHook: the single opening line, isolated.
 - suggestedCta: the closing call-to-action, isolated.`;
 
-    const result = await generateJson<ScriptResponse>(SCRIPT_SYSTEM_PROMPT, prompt, 2500);
+    const result = await generateStructured<ScriptResponse>(
+      SCRIPT_SYSTEM_PROMPT,
+      prompt,
+      SCRIPT_SCHEMA,
+      2500
+    );
 
     scriptPackages.push({
       sourceVideo: video,

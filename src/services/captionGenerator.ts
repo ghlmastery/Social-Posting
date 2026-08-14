@@ -1,4 +1,4 @@
-import { generateJson } from "../lib/anthropic.js";
+import { generateStructured } from "../lib/anthropic.js";
 import type { GeneratedCaption, Platform } from "../types.js";
 
 const SYSTEM_PROMPT = `You write social captions for a GoHighLevel-focused business:
@@ -11,6 +11,32 @@ interface CaptionSet {
   instagram: { body: string; hashtags: string[] };
   youtube: { title: string; body: string; hashtags: string[] };
 }
+
+const CAPTION_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    facebook: {
+      type: "object",
+      properties: { body: { type: "string" }, hashtags: { type: "array", items: { type: "string" } } },
+      required: ["body", "hashtags"],
+    },
+    instagram: {
+      type: "object",
+      properties: { body: { type: "string" }, hashtags: { type: "array", items: { type: "string" } } },
+      required: ["body", "hashtags"],
+    },
+    youtube: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        body: { type: "string" },
+        hashtags: { type: "array", items: { type: "string" } },
+      },
+      required: ["title", "body", "hashtags"],
+    },
+  },
+  required: ["facebook", "instagram", "youtube"],
+};
 
 /**
  * Generates per-platform captions/titles for a video, from just its filename
@@ -26,12 +52,6 @@ export async function generateCaptions(
 ${extraContext ? `Additional context: ${extraContext}` : ""}
 
 Write captions for this video posting to Facebook, Instagram, and YouTube.
-Return JSON with this exact shape:
-{
-  "facebook": { "body": string, "hashtags": string[] },
-  "instagram": { "body": string, "hashtags": string[] },
-  "youtube": { "title": string, "body": string, "hashtags": string[] }
-}
 Rules:
 - facebook.body: 1-3 short paragraphs, hook in the first line.
 - instagram.body: punchier, line breaks, hook in the first line.
@@ -39,7 +59,7 @@ Rules:
 - youtube.body: a real description (2-4 sentences) plus a soft CTA.
 - hashtags: 3-6 relevant, no banned/spammy tags, no leading # needed in the array values.`;
 
-  const result = await generateJson<CaptionSet>(SYSTEM_PROMPT, prompt);
+  const result = await generateStructured<CaptionSet>(SYSTEM_PROMPT, prompt, CAPTION_SCHEMA);
 
   const captions: GeneratedCaption[] = [
     { platform: "facebook", body: result.facebook.body, hashtags: result.facebook.hashtags },

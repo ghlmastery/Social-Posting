@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { config } from "../config.js";
-import { generateJson } from "../lib/anthropic.js";
+import { generateStructured } from "../lib/anthropic.js";
 import { fetchDocAsPlainText } from "../lib/googleDocs.js";
 import { createTextFileInFolder } from "../lib/googleDrive.js";
 import type { ContentIdea, EngineState } from "../types.js";
@@ -14,6 +14,27 @@ document (given verbatim below each time) — don't invent a different framework
 interface IdeaResponse {
   ideas: { title: string; hook: string; angle: string; format: string; frameworkPillar: string }[];
 }
+
+const IDEA_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    ideas: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          hook: { type: "string" },
+          angle: { type: "string" },
+          format: { type: "string" },
+          frameworkPillar: { type: "string" },
+        },
+        required: ["title", "hook", "angle", "format", "frameworkPillar"],
+      },
+    },
+  },
+  required: ["ideas"],
+};
 
 export interface DailyIdeasResult {
   ideas: ContentIdea[];
@@ -39,8 +60,6 @@ Already-used titles (do NOT repeat these or close variants):
 ${recentTitles.length ? recentTitles.map((t) => `- ${t}`).join("\n") : "(none yet)"}
 
 Generate ${count} NEW daily content ideas by applying the framework above.
-Return JSON exactly as:
-{ "ideas": [ { "title": string, "hook": string, "angle": string, "format": string, "frameworkPillar": string } ] }
 
 - title: the video's working title.
 - hook: the exact first line/sentence to say on camera.
@@ -48,7 +67,7 @@ Return JSON exactly as:
 - format: e.g. "talking head", "screen share demo", "before/after", "client story".
 - frameworkPillar: which pillar/category from the framework doc this maps to.`;
 
-  const response = await generateJson<IdeaResponse>(SYSTEM_PROMPT, prompt, 3000);
+  const response = await generateStructured<IdeaResponse>(SYSTEM_PROMPT, prompt, IDEA_SCHEMA, 3000);
 
   const today = new Date().toISOString().slice(0, 10);
   const ideas: ContentIdea[] = response.ideas.map((i) => ({

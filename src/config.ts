@@ -51,13 +51,19 @@ export const config = {
       ? csv("COMPETITOR_NICHE_KEYWORDS")
       : [
           "GoHighLevel",
-          "GoHighLevel tutorial",
-          "business coaching",
-          "business consulting",
-          "SaaS agency coaching",
-          "marketing agency owner",
+          "GoHighLevel agency",
+          "GHL SaaS",
+          "SaaS agency owner",
+          "white label SaaS agency",
+          "scale your marketing agency",
+          "agency owner coaching",
+          "consulting business for agencies",
         ],
     competitorChannels: csv("COMPETITOR_YOUTUBE_CHANNELS"),
+    // Keeps broad keywords (e.g. "agency owner coaching") from matching
+    // unrelated-language/region content that happens to share those words.
+    relevanceLanguage: optional("YOUTUBE_RELEVANCE_LANGUAGE", "en"),
+    regionCode: optional("YOUTUBE_REGION_CODE", "US"),
   },
   posting: {
     timezone: optional("POSTING_TIMEZONE", "America/Toronto"),

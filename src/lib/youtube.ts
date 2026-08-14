@@ -28,6 +28,8 @@ export async function searchRecentVideos(
     order: "viewCount",
     publishedAfter,
     maxResults,
+    relevanceLanguage: config.youtube.relevanceLanguage,
+    regionCode: config.youtube.regionCode,
   });
 
   const videoIds = (searchRes.data.items ?? [])
