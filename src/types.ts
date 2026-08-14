@@ -58,6 +58,25 @@ export interface CompetitorScriptPackage {
   createdAt: string;
 }
 
+export interface FathomMeeting {
+  id: string;
+  title: string;
+  url: string;
+  createdAt: string;
+  attendeeEmails: string[];
+  summary?: string;
+  actionItems?: string[];
+}
+
+export interface CallInsight {
+  id: string;
+  theme: string;
+  description: string;
+  contentAngle: string;
+  mentionCount: number;
+  createdAt: string;
+}
+
 export interface EngineState {
   processedDriveFileIds: string[];
   scheduledPosts: ScheduledPostRecord[];
@@ -65,4 +84,7 @@ export interface EngineState {
   competitorVideoIdsUsed: string[];
   competitorScriptHistory: CompetitorScriptPackage[];
   nextSlotCursor: number;
+  fathomLastSyncedAt: string | null;
+  processedFathomMeetingIds: string[];
+  callInsightHistory: CallInsight[];
 }

@@ -10,6 +10,9 @@ const EMPTY_STATE: EngineState = {
   competitorVideoIdsUsed: [],
   competitorScriptHistory: [],
   nextSlotCursor: 0,
+  fathomLastSyncedAt: null,
+  processedFathomMeetingIds: [],
+  callInsightHistory: [],
 };
 
 /**

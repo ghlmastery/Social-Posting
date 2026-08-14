@@ -8,8 +8,12 @@ import type { ContentIdea, EngineState } from "../types.js";
 
 const SYSTEM_PROMPT = `You are a content strategist for a business serving GoHighLevel
 users, SaaS-enabled agencies, business consultants, and coaches. You generate daily
-short-form video content ideas by strictly applying the user's own content framework
-document (given verbatim below each time) — don't invent a different framework.`;
+short-form video content ideas by applying the user's own content framework document
+(given verbatim below each time) — don't invent a different framework. When recent
+real client call themes are provided, ground ideas in them wherever a theme overlaps
+with a framework pillar — real, current client questions beat generic framework-only
+ideas. Call themes are already anonymized; never reintroduce any name or identifying
+detail even if one appears elsewhere in your context.`;
 
 interface IdeaResponse {
   ideas: { title: string; hook: string; angle: string; format: string; frameworkPillar: string }[];
@@ -48,6 +52,7 @@ export async function generateDailyIdeas(
 ): Promise<DailyIdeasResult> {
   const framework = await fetchDocAsPlainText(config.google.frameworkDocId);
   const recentTitles = state.ideaHistory.slice(-60).map((i) => i.title);
+  const recentCallThemes = state.callInsightHistory.slice(-15);
 
   const prompt = `CONTENT FRAMEWORK DOCUMENT:
 """
@@ -55,6 +60,13 @@ ${framework}
 """
 
 Niche: GoHighLevel software / SaaS tooling for agencies, business consulting, coaching.
+
+RECENT CLIENT CALL THEMES (from real coaching/sales calls — already anonymized, no client-identifying details):
+${
+  recentCallThemes.length
+    ? recentCallThemes.map((t) => `- ${t.theme}: ${t.description}`).join("\n")
+    : "(none synced yet — run `npm run job:call-insights` first)"
+}
 
 Already-used titles (do NOT repeat these or close variants):
 ${recentTitles.length ? recentTitles.map((t) => `- ${t}`).join("\n") : "(none yet)"}

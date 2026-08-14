@@ -78,7 +78,43 @@ results and stats, same as visiting YouTube directly.
 Put an API key in `ANTHROPIC_API_KEY`. Used for captions, daily content
 ideas, and competitor script rewrites.
 
-## 5. Instagram & Facebook competitor research — why it's manual
+## 5. Fathom (call insights)
+
+Fathom (fathom.video) call summaries feed the daily content-idea generator
+with real client questions/themes from coaching and sales calls — see
+`docs/ARCHITECTURE.md` for the full data flow and the privacy handling.
+
+1. In Fathom: Settings → API Access → generate a key. No paid-tier gate as of
+   this writing — available on every plan including free.
+2. Put it in `FATHOM_API_KEY`.
+3. Set `FATHOM_INTERNAL_EMAIL_DOMAINS` to your team's company email domain(s)
+   (comma-separated, e.g. `rmmarketing.ca,ghlmastery.com`). This is the
+   privacy-relevant setting: Adam's Fathom workspace doesn't currently
+   separate coaching/client calls from internal meetings by team or tag, so
+   this domain list is the stand-in filter — a meeting where every attendee
+   is on one of these domains (or where attendee data is missing entirely)
+   is treated as internal and excluded before anything reaches Claude. Leave
+   it empty and every synced meeting is treated as an external client call —
+   only do that if you're confident nothing purely-internal is being
+   recorded in this Fathom workspace. If you later tag/folder coaching calls
+   separately in Fathom, `src/lib/fathom.ts` can be tightened to filter on
+   that instead of email domain (a small, contained change).
+4. Run `npm run verify:connections` to confirm the key works (read-only,
+   lists how many meetings exist in the last 24 hours).
+5. Run `npm run job:call-insights` for a real sync, then read
+   `output/call-themes-<date>.md` — check it reads as genuinely anonymized
+   (no names, no company specifics) before trusting it for anything else.
+
+**Same live-verification caveat as the GHL client:** `developers.fathom.ai`
+was unreachable from this sandbox, so `src/lib/fathom.ts`'s exact endpoint
+path/field names are built from search-engine snippets and third-party
+integration references, not a fetched schema. It's written defensively
+(tolerates a few plausible field-name variants), but if `verify:connections`
+or `job:call-insights` errors or returns obviously-wrong data, check the
+response shape against https://developers.fathom.ai/api-reference/ and
+adjust `src/lib/fathom.ts` — same one-file fix pattern as `ghlClient.ts`.
+
+## 6. Instagram & Facebook competitor research — why it's manual
 
 Instagram and Facebook do not expose any public API that lets a third party
 pull another account's post performance (views, likes) — that data is only
@@ -90,21 +126,23 @@ what to search, what signals to check) alongside the fully-automated YouTube
 research. If you later get access to one of those paid data services, that's
 a contained addition to `src/services/competitorResearchService.ts`.
 
-## 6. Running it — pick one
+## 7. Running it — pick one
 
 ### Option A: GitHub Actions (recommended — no server to manage)
 
 The workflows in `.github/workflows/` already exist:
 - `drive-ingest.yml` — every 20 minutes
+- `call-insights.yml` — daily, 06:00 America/Toronto, an hour ahead of daily ideas
 - `daily-ideas.yml` — daily
 - `competitor-research.yml` — weekly (Mondays)
 
 Add every value from `.env.example` as a **repository secret**
 (Settings → Secrets and variables → Actions → Secrets) — the workflows
-read `GHL_API_TOKEN`, `GOOGLE_SERVICE_ACCOUNT_JSON_BASE64`, etc. from there.
-Non-secret tuning knobs (`POSTING_TIMEZONE`, `POSTING_SLOT_TIMES`, `DRY_RUN`,
-`ANTHROPIC_MODEL`, `COMPETITOR_NICHE_KEYWORDS`, `CONTENT_FRAMEWORK_DOC_ID`)
-can go in **Variables** instead of Secrets.
+read `GHL_API_TOKEN`, `GOOGLE_SERVICE_ACCOUNT_JSON_BASE64`, `FATHOM_API_KEY`,
+etc. from there. Non-secret tuning knobs (`POSTING_TIMEZONE`,
+`POSTING_SLOT_TIMES`, `DRY_RUN`, `ANTHROPIC_MODEL`, `COMPETITOR_NICHE_KEYWORDS`,
+`CONTENT_FRAMEWORK_DOC_ID`, `FATHOM_INTERNAL_EMAIL_DOMAINS`,
+`FATHOM_LOOKBACK_DAYS`) can go in **Variables** instead of Secrets.
 
 Each workflow commits `data/state.json` back to the repo after running, so
 history (which videos were processed, which ideas/competitor videos were
@@ -125,14 +163,17 @@ This runs the same three jobs on cron schedules defined in
 `src/scheduler/index.ts`, in-process, using the local `data/state.json` file
 directly (no git commit step needed).
 
-## 7. Recording workflow (the day-to-day loop)
+## 8. Recording workflow (the day-to-day loop)
 
-1. `npm run job:ideas` (or let the daily Action run) drops fresh ideas —
-   pick one, film it.
-2. `npm run job:research` (or the weekly Action) gives you competitor-inspired
+1. `npm run job:call-insights` (or the daily Action) syncs recent Fathom
+   calls into anonymized themes — run this before ideas so they're grounded
+   in what clients actually asked this week.
+2. `npm run job:ideas` (or let the daily Action run) drops fresh ideas,
+   informed by the framework doc and those call themes — pick one, film it.
+3. `npm run job:research` (or the weekly Action) gives you competitor-inspired
    scripts if you want a starting point instead of/alongside your own ideas.
-3. Name the exported video file descriptively (the caption generator only
+4. Name the exported video file descriptively (the caption generator only
    sees the filename) and drop it in the Drive inbox folder.
-4. Within 20 minutes (or on your VPS's cron tick), it's scheduled across
+5. Within 20 minutes (or on your VPS's cron tick), it's scheduled across
    Facebook, Instagram, and YouTube via the Social Planner, at the next open
    slot in `POSTING_SLOT_TIMES`.

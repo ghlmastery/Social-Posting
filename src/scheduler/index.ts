@@ -3,6 +3,7 @@ import { config } from "../config.js";
 import { ingestNewVideos } from "../services/driveVideoIngest.js";
 import { generateDailyIdeas } from "../services/contentIdeaService.js";
 import { runCompetitorResearch } from "../services/competitorResearchService.js";
+import { syncCallInsights } from "../services/callInsightService.js";
 import { withState } from "../state/store.js";
 
 /**
@@ -28,7 +29,15 @@ cron.schedule(
   { timezone: config.posting.timezone }
 );
 
-// Daily at 07:00: generate content ideas from the framework doc.
+// Daily at 06:30: sync Fathom call themes, ahead of the 07:00 ideas run so
+// same-morning ideas can be grounded in them.
+cron.schedule(
+  "30 6 * * *",
+  () => safeRun("call insights sync", () => withState((state) => syncCallInsights(state))),
+  { timezone: config.posting.timezone }
+);
+
+// Daily at 07:00: generate content ideas from the framework doc + recent call themes.
 cron.schedule(
   "0 7 * * *",
   () => safeRun("daily content ideas", () => withState((state) => generateDailyIdeas(state))),
@@ -43,4 +52,6 @@ cron.schedule(
 );
 
 console.log(`Scheduler running (timezone: ${config.posting.timezone}). DRY_RUN=${config.dryRun}.`);
-console.log("Jobs: drive ingest every 20min, daily ideas at 07:00, competitor research Mondays 06:00.");
+console.log(
+  "Jobs: drive ingest every 20min, call insights sync at 06:30, daily ideas at 07:00, competitor research Mondays 06:00."
+);

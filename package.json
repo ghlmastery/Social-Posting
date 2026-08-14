@@ -13,6 +13,7 @@
     "job:ingest": "tsx src/jobs/runDriveIngestJob.ts",
     "job:ideas": "tsx src/jobs/runDailyIdeasJob.ts",
     "job:research": "tsx src/jobs/runCompetitorResearchJob.ts",
+    "job:call-insights": "tsx src/jobs/runCallInsightsJob.ts",
     "verify:connections": "tsx src/jobs/verifyConnections.ts",
     "scheduler": "tsx src/scheduler/index.ts"
   },

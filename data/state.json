@@ -120,5 +120,8 @@
       "createdAt": "2026-08-14T01:20:31.960Z"
     }
   ],
-  "nextSlotCursor": 0
+  "nextSlotCursor": 0,
+  "fathomLastSyncedAt": null,
+  "processedFathomMeetingIds": [],
+  "callInsightHistory": []
 }

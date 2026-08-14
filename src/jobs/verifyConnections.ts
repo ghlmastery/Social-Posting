@@ -3,6 +3,7 @@ import { assertGoogleConfigured } from "../lib/googleAuth.js";
 import { fetchDocAsPlainText } from "../lib/googleDocs.js";
 import { listVideosInFolder } from "../lib/googleDrive.js";
 import { listAccounts } from "../lib/ghlClient.js";
+import { listMeetingsSince } from "../lib/fathom.js";
 import { required } from "../config.js";
 
 /** Read-only smoke test for every external integration. Safe to run anytime. */
@@ -49,6 +50,22 @@ async function main() {
   try {
     required("YOUTUBE_API_KEY");
     console.log("YOUTUBE_API_KEY is set (run `npm run job:research` to exercise it live).");
+  } catch (err) {
+    ok = false;
+    console.error("FAILED:", (err as Error).message);
+  }
+
+  console.log("\n== Fathom (call insights) ==");
+  try {
+    required("FATHOM_API_KEY");
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const meetings = await listMeetingsSince(since);
+    console.log(`Connected. ${meetings.length} meeting(s) found in the last 24 hours.`);
+    if (config.fathom.internalEmailDomains.length === 0) {
+      console.log(
+        "FATHOM_INTERNAL_EMAIL_DOMAINS is not set — every synced meeting will be treated as an external client call."
+      );
+    }
   } catch (err) {
     ok = false;
     console.error("FAILED:", (err as Error).message);
