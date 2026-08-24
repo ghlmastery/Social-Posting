@@ -1,11 +1,15 @@
 name: Fathom call insights
 
 on:
-  schedule:
-    # 10:00 UTC ~= 06:00 America/Toronto (EDT). Runs an hour ahead of
-    # daily-ideas.yml (11:00 UTC) so synced themes are committed to
-    # data/state.json before that job's checkout picks them up.
-    - cron: "0 10 * * *"
+  # Schedule disabled: FATHOM_API_KEY etc. aren't set as repo secrets yet
+  # (this workspace's egress policy also currently blocks api.fathom.ai from
+  # the sandbox that built this), so every run was failing and spamming
+  # GitHub failure emails. Re-enable by uncommenting once secrets are
+  # configured (docs/SETUP.md §7). 10:00 UTC ~= 06:00 America/Toronto (EDT),
+  # an hour ahead of daily-ideas.yml (11:00 UTC) so synced themes are
+  # committed before that job's checkout picks them up.
+  # schedule:
+  #   - cron: "0 10 * * *"
   workflow_dispatch: {}
 
 concurrency:

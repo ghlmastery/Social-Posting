@@ -1,9 +1,12 @@
 name: Weekly competitor research
 
 on:
-  schedule:
-    # 10:00 UTC every Monday ~= 06:00 America/Toronto (EDT).
-    - cron: "0 10 * * 1"
+  # Schedule disabled: GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 etc. aren't set as
+  # repo secrets yet, so every run was failing and spamming GitHub failure
+  # emails. Re-enable by uncommenting once secrets are configured
+  # (docs/SETUP.md §7). 10:00 UTC every Monday ~= 06:00 America/Toronto (EDT).
+  # schedule:
+  #   - cron: "0 10 * * 1"
   workflow_dispatch: {}
 
 concurrency:

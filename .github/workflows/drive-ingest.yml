@@ -1,11 +1,12 @@
 name: Drive video ingest
 
 on:
-  schedule:
-    # Every 20 minutes. GitHub Actions cron is best-effort and can lag
-    # during high load — this is fine for a posting queue, not for anything
-    # second-precision.
-    - cron: "*/20 * * * *"
+  # Schedule disabled: this repo doesn't have GHL_API_TOKEN /
+  # GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 etc. set as repo secrets yet, so every
+  # run was failing — every 20 minutes — and spamming GitHub failure emails.
+  # Re-enable by uncommenting once secrets are configured (docs/SETUP.md §7).
+  # schedule:
+  #   - cron: "*/20 * * * *"
   workflow_dispatch: {}
 
 concurrency:
